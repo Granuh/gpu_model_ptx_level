@@ -1,0 +1,1 @@
+# gpu_model_ptx_level
