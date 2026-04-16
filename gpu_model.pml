@@ -46,10 +46,10 @@ int summ = 0;
 
 bit barrier_reached[TOTAL_WARPS];  
 
-#define R(warp, thread, reg) \
+#define R(warp, thread, reg) 
     warps[warp].r[(warp)*WARP_SIZE*REG_COUNT + (thread)*REG_COUNT + (reg)]
 
-#define P(warp, thread, pred) \
+#define P(warp, thread, pred) 
     warps[warp].p[(warp)*WARP_SIZE*PRED_COUNT + (thread)*PRED_COUNT + (pred)]
 
 inline push_mask_pc(warp, saved_mask, saved_pc) {
@@ -95,11 +95,11 @@ inline ld_global(warp, thread, dest_reg, addr_reg) {
     int addr;
     atomic {
         addr = R(warp, thread, addr_reg);
-        // Assume word‑aligned address
+        
         R(warp, thread, dest_reg) = global_mem[addr/4];
         printf("Warp %d thread %d: ld.global addr=%d (word %d) -> %d\n",
                warp, thread, addr, addr/4, global_mem[addr/4]);
-        // Non‑deterministic hit (1 cycle) or miss (10 cycles)
+        
         if
             :: true -> warps[warp].wait_cycles = 1;
             :: true -> warps[warp].wait_cycles = 10;
