@@ -434,7 +434,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 28;
 
-        :: warps[warp].pc == 28 ->  /
+        :: warps[warp].pc == 28 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 35) = R(warp, i, 34) & 1;
