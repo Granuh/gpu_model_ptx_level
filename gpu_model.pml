@@ -1028,7 +1028,7 @@ init {
         }
     }
 
-    int N = 32; //N < GLOBAL_SIZE
+    int N = 32;
 
     param[0] = 0;          
     param[1] = 1000;      
@@ -1036,7 +1036,7 @@ init {
     param[3] = N / (SM_COUNT*THREADS_PER_BLOCK);          
     )
     for (i : 0 .. N-1) {
-        global_mem[i] = i;   // simple pattern: 0,1,2,3,...
+        global_mem[i] = i; 
     }
 
     for (w : 0 .. TOTAL_WARPS-1) { barrier_reached[w] = 0; }
