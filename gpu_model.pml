@@ -660,7 +660,7 @@ inline execute_instruction(warp) {
                 :: (tm != 0) ->
                     warps[warp].mask = tm;
                     warps[warp].pc = 43;
-                :: else ->  // Все false
+                :: else ->
                     warps[warp].mask = fm;
                     warps[warp].pc = warps[warp].pc + 1;
                 fi;
