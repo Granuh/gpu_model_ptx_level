@@ -559,7 +559,6 @@ inline execute_instruction(warp) {
                     int wid = sm1 * WARPS_PER_SM + wi;
                     barrier_reached[wid] = 0;
                     if :: (warps[wid].pc == 35) ->
-                        // Поп стека, если есть
                         if :: (warps[wid].sp >= 0) ->
                             warps[wid].mask = warps[wid].stack_mask[warps[wid].sp];
                             warps[wid].pc = warps[wid].stack_pc[warps[wid].sp];
