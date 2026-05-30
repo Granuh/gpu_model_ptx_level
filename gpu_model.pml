@@ -1033,7 +1033,7 @@ init {
     param[1] = 1000;      
     param[2] = 0;        
     param[3] = N / (SM_COUNT*THREADS_PER_BLOCK);          
-    )
+    
     for (i : 0 .. N-1) {
         global_mem[i] = i; 
     }
