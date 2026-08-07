@@ -1,0 +1,119 @@
+.version 3.0
+.target sm_12, texmode_independent
+.address_size 32
+
+
+.entry sum_even(
+	.param .u32 .ptr .global .align 4 sum_even_param_0,
+	.param .u32 .ptr .global .align 4 sum_even_param_1,
+	.param .u32 .ptr .shared .align 4 sum_even_param_2,
+	.param .u32 sum_even_param_3
+)
+{
+	.reg .pred 	%p<7>;
+	.reg .s32 	%r<58>;
+
+
+	ld.param.u32 	%r4, [sum_even_param_3];
+	// inline asm
+	mov.u32 	%r14, %tid.x;
+	// inline asm
+	// inline asm
+	mov.u32 	%r15, %envreg3;
+	// inline asm
+	// inline asm
+	mov.u32 	%r16, %ntid.x;
+	// inline asm
+	// inline asm
+	mov.u32 	%r17, %ctaid.x;
+	// inline asm
+	// inline asm
+	mov.u32 	%r18, %tid.x;
+	// inline asm
+	add.s32 	%r20, %r18, %r15;
+	mad.lo.s32 	%r21, %r17, %r16, %r20;
+	// inline asm
+	mov.u32 	%r19, %ntid.x;
+	// inline asm
+	div.u32 	%r6, %r21, %r19;
+	setp.gt.s32 	%p1, %r4, 0;
+	@%p1 bra 	BB0_2;
+
+	mov.u32 	%r56, 0;
+	bra.uni 	BB0_4;
+
+BB0_2:
+	mov.u32 	%r56, 0;
+	mov.u32 	%r55, %r56;
+
+BB0_3:
+	// inline asm
+	mov.u32 	%r25, %envreg3;
+	// inline asm
+	// inline asm
+	mov.u32 	%r26, %ntid.x;
+	// inline asm
+	// inline asm
+	mov.u32 	%r27, %ctaid.x;
+	// inline asm
+	// inline asm
+	mov.u32 	%r28, %tid.x;
+	// inline asm
+	add.s32 	%r29, %r28, %r25;
+	mad.lo.s32 	%r30, %r27, %r26, %r29;
+	ld.param.u32 	%r54, [sum_even_param_3];
+	mad.lo.s32 	%r31, %r54, %r30, %r55;
+	shl.b32 	%r32, %r31, 2;
+	ld.param.u32 	%r49, [sum_even_param_0];
+	add.s32 	%r33, %r49, %r32;
+	ld.global.u32 	%r34, [%r33];
+	and.b32  	%r35, %r34, 1;
+	setp.eq.s32 	%p2, %r35, 0;
+	selp.b32 	%r36, %r34, 0, %p2;
+	add.s32 	%r56, %r56, %r36;
+	add.s32 	%r55, %r55, 1;
+	setp.lt.s32 	%p3, %r55, %r54;
+	@%p3 bra 	BB0_3;
+
+BB0_4:
+	bar.sync 	0;
+	shl.b32 	%r37, %r14, 2;
+	ld.param.u32 	%r53, [sum_even_param_2];
+	add.s32 	%r38, %r53, %r37;
+	st.shared.u32 	[%r38], %r56;
+	setp.eq.s32 	%p4, %r14, 0;
+	@%p4 bra 	BB0_6;
+
+	ret;
+
+BB0_6:
+	// inline asm
+	mov.u32 	%r39, %ntid.x;
+	// inline asm
+	setp.lt.u32 	%p5, %r39, 2;
+	@%p5 bra 	BB0_9;
+
+	mov.u32 	%r57, 1;
+
+BB0_8:
+	shl.b32 	%r42, %r57, 2;
+	ld.param.u32 	%r52, [sum_even_param_2];
+	add.s32 	%r43, %r52, %r42;
+	ld.shared.u32 	%r44, [%r43];
+	atom.shared.add.u32 	%r45, [%r52], %r44;
+	// inline asm
+	mov.u32 	%r41, %ntid.x;
+	// inline asm
+	add.s32 	%r57, %r57, 1;
+	setp.lt.u32 	%p6, %r57, %r41;
+	@%p6 bra 	BB0_8;
+
+BB0_9:
+	ld.param.u32 	%r51, [sum_even_param_2];
+	ld.shared.u32 	%r46, [%r51];
+	shl.b32 	%r47, %r6, 2;
+	ld.param.u32 	%r50, [sum_even_param_1];
+	add.s32 	%r48, %r50, %r47;
+	st.global.u32 	[%r48], %r46;
+	ret;
+}
