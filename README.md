@@ -164,10 +164,6 @@ Errors: 0   ← sum_correct holds in every reachable state
 | Memory | ~ 22.3 (~5.5 GB) |
 | Coverage | **full state space** (no sampling) |
 
-<!-- TODO: add your plot here, e.g. inverse-search convergence (T vs iteration)
-     or state-space growth; generate with scripts/autotune_search.py + matplotlib:
-     <img src="docs/images/ltl_search_convergence.png" alt="Inverse Model Checking search convergence" width="720"> -->
-
 ---
 
 ## ⚠️ Limitations (by design)
