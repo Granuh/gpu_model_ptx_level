@@ -23,7 +23,7 @@ The verified kernel is `sum_even` (even-number reduction with divergence, barrie
 
 - ✅ **Cycle-approximate SIMT pipeline model**: round-robin warp scheduler, activity masks, SIMT-stack with reconvergence points, `bar.sync` cross-warp barriers, shared/global memory with nondeterministic hit/miss latency.
 - ✅ **PTX-faithful instruction semantics**: `ld/st.global/shared`, `add`, `and`, `setp`, `selp`, `bra`, `bra.uni`, `bar.sync`, `ld.param` — with a full PTX→Promela traceability table.
-- ✅ **Exhaustive verification**: `1,530,170` states explored, depth `16,144`, **0 counterexamples**, ~5.5 GB RAM.
+- ✅ **Exhaustive verification**: `1,530,170` states explored, depth `16,144`, **0 counterexamples**, memory usage: without optimization ≈ 22.3 GB (with optimization ~5.5 GB RAM).
 - 🔍 **Auto-tuning as inverse Model Checking**: the verifier is used as a *witness-finding engine* to search optimal launch parameters with formal guarantees.
 
 ---
@@ -113,7 +113,7 @@ gcc -DMEMLIM=80000 -o pan pan.c
 spin model/gpu_model.pml
 ```
 
-Configuration knobs (edit or override via `-D`):
+Configuration knobs (edit or override):
 
 ```c
 #define SM_COUNT 2            // streaming multiprocessors
@@ -161,7 +161,7 @@ Errors: 0   ← sum_correct holds in every reachable state
 | States stored | **1,530,170** |
 | Search depth | **16,144** |
 | Counterexamples | **0** |
-| Memory | ~5.5 GB |
+| Memory | ~ 22.3 (~5.5 GB) |
 | Coverage | **full state space** (no sampling) |
 
 <!-- TODO: add your plot here, e.g. inverse-search convergence (T vs iteration)
