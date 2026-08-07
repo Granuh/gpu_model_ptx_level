@@ -1,4 +1,4 @@
-# SIMT-Formal 🧮 — A Formally Verified Digital Twin of a GPU Streaming Multiprocessor
+# SIMT-Formal 🧮 — Formal modeling of the pipeline of a modern graphics processor
 
 **Exhaustive formal verification of a SIMT pipeline (warps, divergence, SIMT-stack, barriers, memory latency) with the [SPIN](https://spinroot.com) model checker — plus automatic launch-configuration search via *inverse Model Checking*.**
 
