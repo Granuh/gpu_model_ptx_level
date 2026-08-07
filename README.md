@@ -9,8 +9,6 @@
 ![Counterexamples](https://img.shields.io/badge/Counterexamples-0-success)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-> 🎓 Based on the Master's thesis *«Modeling the Compute Pipeline of a Modern Graphics Processor»* (defended with distinction, 96/100).
-
 ---
 
 ## 📖 Overview
