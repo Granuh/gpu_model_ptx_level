@@ -17,7 +17,7 @@ Modern GPUs hide memory latency behind **massive thread-level parallelism**: tho
 
 This project takes a different route: it builds an **executable formal model** of a streaming multiprocessor (SM) in **Promela** and verifies it **exhaustively** with **SPIN**. Not "we tested a few scenarios" — but *"the property holds in **all** reachable states, under **all** interleavings and **all** cache hit/miss scenarios"*.
 
-The verified kernel is `sum_even` (even-number reduction with divergence, barriers and shared memory), originating from the [VeHa-2024 formal verification contest](https://doi.org/10.15514/ISPRAS-2025-37(1)-10).
+The verified kernel is `sum_even` (even-number reduction with divergence, barriers and shared memory), originating from the [VeHa-2024 formal verification contest](https://www.ispras.ru/proceedings/docs/2025/37/1/isp_37_2025_1_159.pdf) (DOI: 10.15514/ISPRAS-2025-37(1)-10).
 
 ### What's inside
 
@@ -81,19 +81,12 @@ Unlike brute-force simulation or ML-based autotuners, this search is **exhaustiv
 
 ```
 .
-├── model/
-│   └── gpu_model.pml            # Promela model of the SIMT pipeline
+├── docs/
+│   └── images/                  # screenshots & plots (see README)
 ├── kernels/
 │   ├── sum_even.ptx             # PTX kernel (NVVM-compiled)
 │   └── sum_even.cl              # OpenCL source
-├── properties/
-│   ├── sum_correct.ltl          # correctness specification
-│   └── time_bound.ltl           # optimization specification (inverse MC)
-├── scripts/
-│   ├── run_verification.sh      # spin -a → gcc → pan
-│   └── autotune_search.py       # outer loop: configs × threshold T
-├── docs/
-│   └── images/                  # screenshots & plots (see README)
+|   gpu_model_ptx_level          # Promela model of the SIMT pipeline
 └── README.md
 ```
 
