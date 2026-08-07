@@ -196,7 +196,7 @@ Each limitation is a tracked roadmap item, not an oversight.
 ```bibtex
 @mastersthesis{simtformal,
   author = {Yuri},
-  title  = {Modeling the Compute Pipeline of a Modern Graphics Processor},
+  title  = {Formal modeling of the pipeline of a modern graphics processor},
   school = {Altai State Technical University I.I. Polzunov},
   year   = {2026}
 }
