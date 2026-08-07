@@ -134,7 +134,7 @@ ltl sum_correct {
 }
 ```
 
-     <img src="docs/images/spin_verification_output.png" alt="SPIN verification output" width="720">
+<img src="docs/images/spin_verification_output.png" alt="SPIN verification output" width="720">
 
 ```text
 $ spin -a model/gpu_model.pml && gcc -DMEMLIM=80000 -o pan pan.c && ./pan -m1000000 -w
