@@ -11,14 +11,14 @@
 #define MASK_STACK_DEPTH 8
 
 typedef Warp {
-    int pc;                             
+    int pc;                            
     int mask;                            
-    int stack_mask[MASK_STACK_DEPTH];     
-    int stack_pc[MASK_STACK_DEPTH];       
-    int sp;                               
-    int r[TOTAL_WARPS * WARP_SIZE * REG_COUNT]; 
-    int p[TOTAL_WARPS * WARP_SIZE * PRED_COUNT]; 
-    int wait_cycles;                       
+    int stack_mask[MASK_STACK_DEPTH];    
+    int stack_pc[MASK_STACK_DEPTH];      
+    int sp;                              
+    int r[TOTAL_WARPS * WARP_SIZE * REG_COUNT];
+    int p[TOTAL_WARPS * WARP_SIZE * PRED_COUNT];
+    int wait_cycles;                      
     bit finished;                          
 };
 
@@ -27,7 +27,7 @@ Warp warps[TOTAL_WARPS];
 int global_mem[GLOBAL_SIZE];
 int shared_mem[SM_COUNT*SHARED_SIZE];
 
-int param[4]; 
+int param[4];  
 
 int tid[SM_COUNT*TOTAL_WARPS*WARP_SIZE];
 int ctaid[SM_COUNT*TOTAL_WARPS*WARP_SIZE];
@@ -46,10 +46,10 @@ int summ = 0;
 
 bit barrier_reached[TOTAL_WARPS];  
 
-#define R(warp, thread, reg) 
+#define R(warp, thread, reg) \
     warps[warp].r[(warp)*WARP_SIZE*REG_COUNT + (thread)*REG_COUNT + (reg)]
 
-#define P(warp, thread, pred) 
+#define P(warp, thread, pred) \
     warps[warp].p[(warp)*WARP_SIZE*PRED_COUNT + (thread)*PRED_COUNT + (pred)]
 
 inline push_mask_pc(warp, saved_mask, saved_pc) {
@@ -74,6 +74,46 @@ inline pop_mask_pc(warp) {
     }
 }
 
+/*inline bra_cond(warp, pred_reg, target_pc) {
+    int true_mask = 0;
+    int false_mask = 0;
+    //int i;  
+    atomic {
+       
+        for (i : 0 .. WARP_SIZE-1) {
+            if
+                :: (warps[warp].mask & (1<<i)) ->
+                    if
+                        :: (P(warp, i, pred_reg) != 0) ->
+                            true_mask = true_mask | (1<<i);
+                        :: else ->
+                            false_mask = false_mask | (1<<i);
+                    fi;
+                :: else -> skip;
+            fi;
+        }
+        printf("Warp %d: bra_cond pred=%d true=0x%x false=0x%x\n",
+               warp, pred_reg, true_mask, false_mask);
+       
+        if
+            :: (true_mask != 0 && false_mask != 0) ->
+                push_mask_pc(warp, false_mask, warps[warp].pc + 1);
+                warps[warp].mask = true_mask;
+                warps[warp].pc = target_pc;
+                printf("Warp %d: DIVERGE -> target %d, new mask=0x%x\n",
+                       warp, target_pc, warps[warp].mask);
+            :: (true_mask != 0) ->
+                warps[warp].pc = target_pc;
+                printf("Warp %d: BRANCH (all true) -> target %d\n",
+                       warp, target_pc);
+            :: else ->
+                warps[warp].pc = warps[warp].pc + 1;
+                printf("Warp %d: FALLTHROUGH (all false) -> pc=%d\n",
+                       warp, warps[warp].pc);
+        fi;
+    }
+}*/
+
 inline bra_uni(warp, target_pc) {
     atomic {
         warps[warp].pc = target_pc;
@@ -95,11 +135,11 @@ inline ld_global(warp, thread, dest_reg, addr_reg) {
     int addr;
     atomic {
         addr = R(warp, thread, addr_reg);
-        
+       
         R(warp, thread, dest_reg) = global_mem[addr/4];
         printf("Warp %d thread %d: ld.global addr=%d (word %d) -> %d\n",
                warp, thread, addr, addr/4, global_mem[addr/4]);
-        
+       
         if
             :: true -> warps[warp].wait_cycles = 1;
             :: true -> warps[warp].wait_cycles = 10;
@@ -111,13 +151,15 @@ inline ld_global(warp, thread, dest_reg, addr_reg) {
 
 inline execute_instruction(warp) {
     int tm, fm;  
+    //int i;  
     printf("DEBUG: Warp %d PC=%d mask=0x%x sp=%d\n",
        warp, warps[warp].pc, warps[warp].mask, warps[warp].sp);
     atomic {
         printf("Warp %d: EXECUTING PC=%d mask=0x%x\n",
                warp, warps[warp].pc, warps[warp].mask);
         if
-        :: warps[warp].pc == 0 ->   
+       
+        :: warps[warp].pc == 0 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 4) = param[3];
@@ -128,7 +170,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 1;
 
-        :: warps[warp].pc == 1 ->   
+        :: warps[warp].pc == 1 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 14) = tid[warp*TOTAL_WARPS+i];
@@ -139,7 +181,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 2;
 
-        :: warps[warp].pc == 2 ->   
+        :: warps[warp].pc == 2 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 15) = envreg3[warp*TOTAL_WARPS+i];
@@ -150,7 +192,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 3;
 
-        :: warps[warp].pc == 3 ->   
+        :: warps[warp].pc == 3 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 16) = ntid[warp*TOTAL_WARPS+i];
@@ -161,7 +203,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 4;
 
-        :: warps[warp].pc == 4 ->   
+        :: warps[warp].pc == 4 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 17) = ctaid[warp*TOTAL_WARPS+i];
@@ -172,7 +214,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 5;
 
-        :: warps[warp].pc == 5 ->   
+        :: warps[warp].pc == 5 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 18) = tid[warp*TOTAL_WARPS+i];
@@ -183,7 +225,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 6;
 
-        :: warps[warp].pc == 6 ->   
+        :: warps[warp].pc == 6 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 20) = R(warp, i, 18) + R(warp, i, 15);
@@ -194,7 +236,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 7;
 
-        :: warps[warp].pc == 7 ->   
+        :: warps[warp].pc == 7 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 21) = R(warp, i, 17) * R(warp, i, 16) + R(warp, i, 20);
@@ -205,7 +247,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 8;
 
-        :: warps[warp].pc == 8 ->   
+        :: warps[warp].pc == 8 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 19) = ntid[warp*TOTAL_WARPS+i];
@@ -216,7 +258,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 9;
 
-        :: warps[warp].pc == 9 ->   
+        :: warps[warp].pc == 9 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 6) = R(warp, i, 21) / R(warp, i, 19);
@@ -240,7 +282,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 11;
 
-        :: warps[warp].pc == 11 -> 
+        :: warps[warp].pc == 11 ->  
             atomic {
                 tm = 0; fm = 0;
                 for (i : 0 .. WARP_SIZE-1) {
@@ -283,7 +325,7 @@ inline execute_instruction(warp) {
         :: warps[warp].pc == 13 ->  
             bra_uni(warp, 35);
 
-        :: warps[warp].pc == 14 -> 
+        :: warps[warp].pc == 14 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 56) = 0;
@@ -432,6 +474,7 @@ inline execute_instruction(warp) {
                 :: else -> skip;
                 fi;
             }
+           
             warps[warp].pc = 28;
 
         :: warps[warp].pc == 28 ->  
@@ -500,7 +543,7 @@ inline execute_instruction(warp) {
         :: warps[warp].pc == 33 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
-                    if 
+                    if
                         ::(R(warp, i, 55) < R(warp, i, 54)) ->  P(warp, i, 3) = 1
                         ::else -> P(warp, i, 3) = 0;
                     fi;
@@ -546,31 +589,35 @@ inline execute_instruction(warp) {
          atomic {
             int sm1 = warp / WARPS_PER_SM;
             barrier_reached[warp] = 1;
-        
+       
+           
             bit all_reached = 1;
             for (wi : 0 .. WARPS_PER_SM-1) {
                 int wid = sm1 * WARPS_PER_SM + wi;
                 if :: (barrier_reached[wid] == 0) -> all_reached = 0; break;
                 :: else -> skip; fi;
             }
-        
+       
             if :: (all_reached == 1) ->
+               
                 for (wi : 0 .. WARPS_PER_SM-1) {
                     int wid = sm1 * WARPS_PER_SM + wi;
                     barrier_reached[wid] = 0;
                     if :: (warps[wid].pc == 35) ->
+                       
                         if :: (warps[wid].sp >= 0) ->
                             warps[wid].mask = warps[wid].stack_mask[warps[wid].sp];
                             warps[wid].pc = warps[wid].stack_pc[warps[wid].sp];
                             warps[wid].sp = warps[wid].sp - 1;
                         :: else -> skip; fi;
-                        warps[wid].pc = 36;
+                        warps[wid].pc = 36;  
                     :: else -> skip; fi;
                 }
             :: else ->
+               
                 skip;
             fi;
-            
+           
         }
 
         :: warps[warp].pc == 36 ->  
@@ -648,30 +695,31 @@ inline execute_instruction(warp) {
                     :: else -> skip;
                     fi;
                 }
-            
+           
                 if
                 :: (tm != 0 && fm != 0) ->  
                     warps[warp].sp = warps[warp].sp + 1;
                     assert(warps[warp].sp < MASK_STACK_DEPTH);
                     warps[warp].stack_mask[warps[warp].sp] = fm;
                     warps[warp].stack_pc[warps[warp].sp] = warps[warp].pc + 1;
-                    warps[warp].mask = tm;
+                    warps[warp].mask = tm;  
                     warps[warp].pc = 43;
-                :: (tm != 0) ->
-                    warps[warp].mask = tm;
+                :: (tm != 0) ->  
+                    warps[warp].mask = tm;  
                     warps[warp].pc = 43;
-                :: else ->
-                    warps[warp].mask = fm;
+                :: else ->  
+                    warps[warp].mask = fm;  
                     warps[warp].pc = warps[warp].pc + 1;
                 fi;
             }
 
-        :: warps[warp].pc == 42 -> 
+        :: warps[warp].pc == 42 ->  
+           
             warps[warp].mask = 0;
             warps[warp].finished = 1;
             printf("Warp %d: RET (finished)\n", warp);
 
-        :: warps[warp].pc == 43 -> 
+        :: warps[warp].pc == 43 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 39) = ntid[warp*TOTAL_WARPS+i];
@@ -682,7 +730,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 44;
 
-        :: warps[warp].pc == 44 -> 
+        :: warps[warp].pc == 44 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     if
@@ -696,7 +744,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 45;
 
-        :: warps[warp].pc == 45 ->
+        :: warps[warp].pc == 45 ->  
             atomic {
                 tm = 0; fm = 0;
                 for (i : 0 .. WARP_SIZE-1) {
@@ -726,7 +774,7 @@ inline execute_instruction(warp) {
                 fi;
             }
 
-        :: warps[warp].pc == 46 -> 
+        :: warps[warp].pc == 46 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) ->
                     R(warp, i, 57) = 1;
@@ -769,7 +817,7 @@ inline execute_instruction(warp) {
             }
             warps[warp].pc = 50;
 
-        :: warps[warp].pc == 50 -> 
+        :: warps[warp].pc == 50 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) -> {
                     int addr = R(warp, i, 43);
@@ -784,11 +832,11 @@ inline execute_instruction(warp) {
             warps[warp].wait_cycles = 1;
             warps[warp].pc = 51;
 
-        :: warps[warp].pc == 51 -> 
+        :: warps[warp].pc == 51 ->  
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) -> {
                     int sm1 = warp / WARPS_PER_SM;
-                    int base = param[2];  
+                    int base = param[2];  // same for all threads
                     R(warp, i, 45) = shared_mem[sm1*SHARED_SIZE+base/4];
                     shared_mem[sm1*SHARED_SIZE+base/4] = shared_mem[sm1*SHARED_SIZE+base/4] + R(warp, i, 44);
                     printf("Warp %d thread %d: atom.add [%d] + %d -> new value %d, old=%d\n",
@@ -894,20 +942,24 @@ inline execute_instruction(warp) {
             warps[warp].pc = 58;
 
         :: warps[warp].pc == 58 ->  
+           
             for (i : 0 .. WARP_SIZE-1) {
                 if :: (warps[warp].mask & (1<<i)) -> {
                     int addr = param[1] + R(warp, i, 6)*4;
 
                     int word_idx = addr/4;
            
+                   
                     printf("DEBUG: Warp %d thread %d: ABOUT TO WRITE global_mem[%d] = %d (was %d)\n",
                         warp, i, word_idx, R(warp, i, 46), global_mem[word_idx]);
-                
+               
                     global_mem[word_idx] = R(warp, i, 46);
-                
+               
+                   
                     printf("DEBUG: Warp %d thread %d: WRITTEN global_mem[%d] = %d\n",
                         warp, i, word_idx, global_mem[word_idx]);
 
+                   
                     printf("Warp %d thread %d: st.global [%d] = %d (output[%d])\n",
                            warp, i, addr, R(warp,i,46), R(warp,i,6));
                 }
@@ -922,7 +974,7 @@ inline execute_instruction(warp) {
             warps[warp].finished = 1;
             printf("Warp %d: finished (end of kernel)\n", warp);
 
-        :: else -> 
+        :: else ->
             printf("ERROR: invalid PC %d for warp %d\n", warps[warp].pc, warp);
             break;
         fi;
@@ -938,6 +990,7 @@ proctype scheduler() {
         :: atomic {
             cycle = cycle + 1;
             printf("========== CYCLE %d ==========\n", cycle);
+           
             for (sm : 0 .. SM_COUNT-1) {
                 int start = last_warp[sm];
                 int found = 0;
@@ -962,6 +1015,7 @@ proctype scheduler() {
                 }  ::else -> skip
                 fi
             }
+           
             for (warp : 0 .. TOTAL_WARPS-1) {
                 if ::(warps[warp].wait_cycles > 0) -> {
                     warps[warp].wait_cycles = warps[warp].wait_cycles - 1;
@@ -971,6 +1025,7 @@ proctype scheduler() {
                 fi
             }
 
+           
             all_done = 1;
             for (warp : 0 .. TOTAL_WARPS-1) {
                 if ::(warps[warp].mask != 0)-> {
@@ -979,12 +1034,12 @@ proctype scheduler() {
                 }  ::else -> skip;
                 fi
             }
-        } 
+        }
         if ::(all_done) -> break
            ::else -> skip;
         fi
     od;
-    
+   
     printf("\n=== ALL WARPS FINISHED ===\n");
     for (sm : 0 .. SM_COUNT-1) {
         printf("SM %d: idle %d%%, total cycles %d\n", sm,
@@ -996,7 +1051,7 @@ proctype scheduler() {
         int base_addr = param[1]/4;  
         printf("Block %d (SM %d): sum = %d\n",
                sm, sm, global_mem[base_addr + sm]);
-        summ = summ +  global_mem[base_addr + sm];     
+        summ = summ +  global_mem[base_addr + sm];    
     }
     sum_done = 1;
 }
@@ -1005,6 +1060,7 @@ init {
     int warp_id = 0;
     int sm, w, t, i;
 
+   
     for (sm : 0 .. SM_COUNT-1) {
         for (w : 0 .. WARPS_PER_SM-1) {
             for (t : 0 .. WARP_SIZE-1) {
@@ -1016,30 +1072,33 @@ init {
                 ntid[warp_id*TOTAL_WARPS+t] = THREADS_PER_BLOCK;
                 envreg3[warp_id*(TOTAL_WARPS-1)+t] = 0;
             }
-
+           
             warps[warp_id].pc = 0;
             warps[warp_id].mask = (1 << WARP_SIZE) - 1;
             warps[warp_id].sp = -1;
             warps[warp_id].wait_cycles = 0;
             warps[warp_id].finished = 0;
-
+           
             warp_id = warp_id + 1;
         }
     }
 
     int N = 32;
 
+   
     param[0] = 0;          
     param[1] = 1000;      
-    param[2] = 0;        
+    param[2] = 0;          
     param[3] = N / (SM_COUNT*THREADS_PER_BLOCK);          
-    
+
+   
     for (i : 0 .. N-1) {
-        global_mem[i] = i; 
+        global_mem[i] = i;  
     }
 
     for (w : 0 .. TOTAL_WARPS-1) { barrier_reached[w] = 0; }
 
+   
     run scheduler();
 }
 
